@@ -8,7 +8,7 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: 'Video Transcriber',
+  title: 'SamScribe',
   description: 'Transcribe videos using Groq\'s Whisper model',
 }
 
