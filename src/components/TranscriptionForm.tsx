@@ -6,7 +6,7 @@ import { toBlobURL } from '@ffmpeg/util';
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { CheckCircle, FileVideo, Upload, Download } from 'lucide-react';
-import { transcribe } from '@/app/actions';
+import { transcribe, generateSubtitleFiles } from '@/app/actions';
 
 export default function TranscriptionForm() {
   const [step, setStep] = useState(1);
@@ -15,7 +15,9 @@ export default function TranscriptionForm() {
   const [dragActive, setDragActive] = useState(false);
   const [ffmpegLoaded, setFfmpegLoaded] = useState(false);
   const [transcriptionResult, setTranscriptionResult] = useState<string | null>(null);
+  const [subtitleFiles, setSubtitleFiles] = useState<{ txt: string; vtt: string; srt: string } | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [processingTime, setProcessingTime] = useState<number>(0);
   const ffmpegRef = useRef(new FFmpeg());
 
   useEffect(() => {
@@ -120,6 +122,7 @@ export default function TranscriptionForm() {
     setStep(3);
     setProgress(0);
     setIsProcessing(true);
+    const startTime = Date.now();
 
     try {
       // Set initial progress
@@ -134,13 +137,22 @@ export default function TranscriptionForm() {
       const formData = new FormData();
       formData.append("file", audioBlob, "audio.mp3");
       formData.append("model", "whisper-large-v3-turbo");
+      formData.append("response_format", "verbose_json");
 
       // Transcribe audio
       const result = await transcribe(formData);
       
       // Handle successful transcription
-      if (result && result.text) {
+      if (result) {
         setTranscriptionResult(result.text);
+        
+        // Generate subtitle files
+        const files = await generateSubtitleFiles(result);
+        setSubtitleFiles(files);
+        
+        const endTime = Date.now();
+        setProcessingTime((endTime - startTime) / 1000); // Convert to seconds
+        
         setStep(4);
       } else {
         throw new Error("No transcription result returned");
@@ -162,16 +174,26 @@ export default function TranscriptionForm() {
     link.click();
     document.body.removeChild(link);
   };
+  
+  // Helper function for subtitle generation
+  const formatTimestamp = (seconds: number, format: 'srt' | 'vtt'): string => {
+    const date = new Date(seconds * 1000);
+    const hours = date.getUTCHours().toString().padStart(2, '0');
+    const minutes = date.getUTCMinutes().toString().padStart(2, '0');
+    const secs = date.getUTCSeconds().toString().padStart(2, '0');
+    const ms = date.getUTCMilliseconds().toString().padStart(3, '0');
+    
+    if (format === 'vtt') {
+      return `${hours}:${minutes}:${secs}.${ms}`;
+    } else {
+      return `${hours}:${minutes}:${secs},${ms}`;
+    }
+  };
 
   // Set document title to SamScribe when component mounts
   useEffect(() => {
     document.title = "SamScribe";
   }, []);
-
-  const subtitleFiles = transcriptionResult ? {
-    vtt: new Blob([transcriptionResult], { type: "text/vtt" }),
-    srt: new Blob([transcriptionResult], { type: "text/srt" }),
-  } : null;
 
   return (
     <div className="fixed inset-0 bg-gray-100 flex items-center justify-center p-4">
@@ -242,7 +264,10 @@ export default function TranscriptionForm() {
         {step === 4 && transcriptionResult && (
           <div className="text-center">
             <CheckCircle className="mx-auto mb-4 text-green-500" size={48} />
-            <p className="mb-4">Transcripts generated successfully!</p>
+            <p className="mb-2">Transcripts generated successfully!</p>
+            <p className="text-sm text-gray-500 mb-4">
+              Processing time: {processingTime.toFixed(2)} seconds
+            </p>
             <div
               className="bg-gray-100 p-4 rounded-lg mb-4 max-h-40 overflow-y-auto transition-all duration-300 hover:bg-gray-200 hover:shadow-md"
               onMouseEnter={(e) => {
@@ -294,8 +319,9 @@ export default function TranscriptionForm() {
                   <div
                     className="cursor-pointer hover:bg-gray-100 px-4 py-2 text-sm"
                     onClick={() => {
-                      if (transcriptionResult) {
-                        downloadFile(new Blob([transcriptionResult], { type: "text/vtt" }), 'transcript.vtt');
+                      if (subtitleFiles) {
+                        const blob = new Blob([subtitleFiles.vtt], { type: "text/vtt" });
+                        downloadFile(blob, 'transcript.vtt');
                       }
                       document.getElementById('formatDropdown')?.classList.add('hidden');
                     }}
@@ -305,8 +331,9 @@ export default function TranscriptionForm() {
                   <div
                     className="cursor-pointer hover:bg-gray-100 px-4 py-2 text-sm"
                     onClick={() => {
-                      if (transcriptionResult) {
-                        downloadFile(new Blob([transcriptionResult], { type: "text/srt" }), 'transcript.srt');
+                      if (subtitleFiles) {
+                        const blob = new Blob([subtitleFiles.srt], { type: "text/plain;charset=utf-8" });
+                        downloadFile(blob, 'transcript.srt');
                       }
                       document.getElementById('formatDropdown')?.classList.add('hidden');
                     }}
@@ -316,8 +343,9 @@ export default function TranscriptionForm() {
                   <div
                     className="cursor-pointer hover:bg-gray-100 px-4 py-2 text-sm"
                     onClick={() => {
-                      if (transcriptionResult) {
-                        downloadFile(new Blob([transcriptionResult], { type: "text/plain" }), 'transcript.txt');
+                      if (subtitleFiles) {
+                        const blob = new Blob([subtitleFiles.txt], { type: "text/plain;charset=utf-8" });
+                        downloadFile(blob, 'transcript.txt');
                       }
                       document.getElementById('formatDropdown')?.classList.add('hidden');
                     }}
@@ -328,9 +356,22 @@ export default function TranscriptionForm() {
                     className="cursor-pointer hover:bg-gray-100 px-4 py-2 text-sm"
                     onClick={() => {
                       if (transcriptionResult) {
-                        // For DOCX we would normally use a library like docx-js
-                        // For simplicity, we're just providing the text format with a docx extension
-                        downloadFile(new Blob([transcriptionResult], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" }), 'transcript.docx');
+                        const htmlContent = `
+                          <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+                          <head>
+                            <meta charset="utf-8">
+                            <title>Transcript</title>
+                            <xml><w:WordDocument><w:View>Print</w:View></w:WordDocument></xml>
+                          </head>
+                          <body>
+                            <div style="font-family: Arial; line-height: 1.5;">${transcriptionResult.split('\n').join('<br>')}</div>
+                          </body>
+                          </html>
+                        `;
+                        const blob = new Blob([htmlContent], { 
+                          type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" 
+                        });
+                        downloadFile(blob, 'transcript.docx');
                       }
                       document.getElementById('formatDropdown')?.classList.add('hidden');
                     }}
@@ -341,14 +382,15 @@ export default function TranscriptionForm() {
                     className="cursor-pointer hover:bg-gray-100 px-4 py-2 text-sm"
                     onClick={() => {
                       if (transcriptionResult) {
-                        // Create a simple HTML structure for the PDF
                         const htmlContent = `
                           <!DOCTYPE html>
                           <html>
                             <head>
+                              <meta charset="utf-8">
                               <title>Transcript</title>
                               <style>
-                                body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+                                @page { margin: 2cm; }
+                                body { font-family: Arial, sans-serif; line-height: 1.6; }
                                 h1 { color: #333; }
                                 .content { white-space: pre-wrap; }
                               </style>
@@ -359,9 +401,8 @@ export default function TranscriptionForm() {
                             </body>
                           </html>
                         `;
-                        
-                        // Use text/html MIME type which browsers can convert to PDF when downloading
-                        downloadFile(new Blob([htmlContent], { type: "text/html" }), 'transcript.pdf');
+                        const blob = new Blob([htmlContent], { type: "application/pdf" });
+                        downloadFile(blob, 'transcript.pdf');
                       }
                       document.getElementById('formatDropdown')?.classList.add('hidden');
                     }}
