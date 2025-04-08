@@ -37,11 +37,12 @@ export async function transcribe(formData: FormData) {
     });
     
     if (!response.ok) {
-      throw new Error('Transcription request failed');
+      const errorData = await response.json();
+      throw new Error(`Transcription request failed: ${errorData.error?.message || 'Unknown error'}`);
     }
     
     const result = await response.json();
-    console.log('Transcription result:', result); // Log the result for debugging
+    console.log('Transcription result:', result);
     return result as TranscriptionResponse;
   } catch (error) {
     console.error('Error in transcribe action:', error);
@@ -50,84 +51,99 @@ export async function transcribe(formData: FormData) {
 }
 
 function formatTimestamp(seconds: number, format: 'srt' | 'vtt'): string {
-  const date = new Date(seconds * 1000);
-  const hours = date.getUTCHours().toString().padStart(2, '0');
-  const minutes = date.getUTCMinutes().toString().padStart(2, '0');
-  const secs = date.getUTCSeconds().toString().padStart(2, '0');
-  const ms = Math.floor(date.getUTCMilliseconds()).toString().padStart(3, '0');
+  const pad = (num: number) => num.toString().padStart(2, '0');
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = Math.floor(seconds % 60);
+  const ms = Math.floor((seconds % 1) * 1000);
   
   if (format === 'vtt') {
-    return `${hours}:${minutes}:${secs}.${ms}`;
+    return `${pad(hours)}:${pad(minutes)}:${pad(secs)}.${ms.toString().padStart(3, '0')}`;
   } else {
-    return `${hours}:${minutes}:${secs},${ms}`;
+    return `${pad(hours)}:${pad(minutes)}:${pad(secs)},${ms.toString().padStart(3, '0')}`;
   }
 }
 
 function splitTextIntoLines(text: string, maxChars: number = 42): string[] {
-  const lines: string[] = [];
-  let currentLine = '';
-  
-  // Split by words and handle punctuation
   const words = text.split(' ');
+  const lines: string[] = [];
+  let currentLine: string[] = [];
+  let currentLength = 0;
   
-  for (let i = 0; i < words.length; i++) {
-    const word = words[i];
-    const nextLine = currentLine.length === 0 ? word : `${currentLine} ${word}`;
-    
-    if (nextLine.length <= maxChars) {
-      currentLine = nextLine;
+  for (const word of words) {
+    if (currentLength + word.length + 1 > maxChars && currentLine.length > 0) {
+      lines.push(currentLine.join(' '));
+      currentLine = [word];
+      currentLength = word.length;
     } else {
-      // Push current line if not empty
-      if (currentLine.length > 0) {
-        lines.push(currentLine);
-        currentLine = word;
-      } else {
-        // Handle words longer than maxChars by splitting them
-        let remainingWord = word;
-        while (remainingWord.length > maxChars) {
-          lines.push(remainingWord.slice(0, maxChars));
-          remainingWord = remainingWord.slice(maxChars);
-        }
-        currentLine = remainingWord;
-      }
+      currentLine.push(word);
+      currentLength += word.length + (currentLine.length > 0 ? 1 : 0);
     }
   }
   
-  // Add the last line if not empty
   if (currentLine.length > 0) {
-    lines.push(currentLine);
+    lines.push(currentLine.join(' '));
   }
   
   return lines;
 }
 
-export async function generateSubtitleFiles(transcription: TranscriptionResponse): Promise<{ txt: string; vtt: string; srt: string }> {
-  let txt = transcription.text;
-  let vtt = 'WEBVTT\n\n';
-  let srt = '';
-  let srtCounter = 1;
+function cleanText(text: string): string {
+  // Remove filler sounds and clean up the text
+  return text.replace(/\b(um|uh|er|ah|like)\b/gi, '').replace(/\s+/g, ' ').trim();
+}
+
+export async function generateSubtitleFiles(result: any) {
+  const segments = result.segments;
+  let srtContent = '';
+  let vttContent = 'WEBVTT\n\n';
+  let txtContent = '';
+  let index = 1;
   
-  transcription.segments.forEach((segment) => {
-    const startTime = formatTimestamp(segment.start, 'vtt');
-    const endTime = formatTimestamp(segment.end, 'vtt');
-    const text = segment.text.trim();
+  const firstSegmentStart = segments[0]?.start || 0;
+  
+  // Add initial segment if there's a delay before the first spoken content
+  if (firstSegmentStart > 0) {
+    const initialEndTime = formatTimestamp(firstSegmentStart, 'vtt');
+    srtContent += `1\n00:00:00,000 --> ${formatTimestamp(firstSegmentStart, 'srt')}\n[Music]\n\n`;
+    vttContent += `00:00:00.000 --> ${initialEndTime}\n[Music]\n\n`;
+    index++;
+  }
+  
+  segments.forEach((segment: any) => {
+    const cleanedText = cleanText(segment.text);
+    const lines = splitTextIntoLines(cleanedText);
     
-    // Split text into lines with strict 42 char limit
-    const lines = splitTextIntoLines(text);
+    if (lines.length === 0) return;
     
-    // Format VTT - each line gets its own timestamp
-    lines.forEach((line) => {
-      vtt += `${startTime} --> ${endTime}\n${line}\n\n`;
-    });
+    const durationPerChar = (segment.end - segment.start) / cleanedText.length;
+    const minDuration = 1.5; // Minimum duration in seconds
+    let lineStart = segment.start;
     
-    // Format SRT - each line gets its own timestamp and number
-    lines.forEach((line) => {
-      srt += `${srtCounter}\n`;
-      srt += `${formatTimestamp(segment.start, 'srt')} --> ${formatTimestamp(segment.end, 'srt')}\n`;
-      srt += `${line}\n\n`;
-      srtCounter++;
-    });
+    for (const line of lines) {
+      const lineDuration = Math.max(line.length * durationPerChar, minDuration);
+      const lineEnd = Math.min(lineStart + lineDuration, segment.end);
+      
+      const startTime = formatTimestamp(lineStart, 'vtt');
+      const endTime = formatTimestamp(lineEnd, 'vtt');
+      
+      // SRT
+      srtContent += `${index}\n${formatTimestamp(lineStart, 'srt')} --> ${formatTimestamp(lineEnd, 'srt')}\n${line}\n\n`;
+      
+      // VTT
+      vttContent += `${startTime} --> ${endTime}\n${line}\n\n`;
+      
+      index++;
+      lineStart = lineEnd;
+    }
+    
+    // Plain text
+    txtContent += `${cleanedText} `;
   });
   
-  return { txt, vtt, srt };
+  return {
+    srt: srtContent.trim(),
+    vtt: vttContent.trim(),
+    txt: txtContent.trim()
+  };
 }
