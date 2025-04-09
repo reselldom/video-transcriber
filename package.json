@@ -11,18 +11,22 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@clerk/nextjs": "^6.14.1",
+    "@clerk/nextjs": "4.29.9",
     "@ffmpeg/ffmpeg": "0.12.6",
     "@ffmpeg/util": "0.12.1",
+    "@radix-ui/react-avatar": "^1.1.4",
     "@radix-ui/react-progress": "^1.1.2",
+    "@radix-ui/react-slot": "^1.2.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "framer-motion": "^12.6.3",
     "lucide-react": "^0.344.0",
     "next": "14.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "tailwind-merge": "^3.0.2",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwind-merge": "^3.2.0",
+    "tailwindcss-animate": "^1.0.7",
+    "tslib": "^2.8.1"
   },
   "devDependencies": {
     "@types/node": "^20.11.24",
@@ -31,6 +35,7 @@
     "autoprefixer": "10.4.17",
     "eslint": "^8.57.0",
     "eslint-config-next": "14.1.0",
+    "lint-staged": "^15.5.0",
     "postcss": "8.4.35",
     "tailwindcss": "3.4.1",
     "typescript": "^5.3.3"

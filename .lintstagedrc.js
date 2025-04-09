@@ -6,5 +6,6 @@ const buildEslintCommand = (filenames) =>
     .join(' --file ')}`;
 
 module.exports = {
-  '*.{js,jsx,ts,tsx}': [buildEslintCommand],
+  // Run ESLint on all staged JS/TS/TSX files
+  "*.{js,ts,tsx}": ["eslint --fix"]
 };

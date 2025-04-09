@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
-import { ClerkProvider, SignInButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs'
-import { SignUpButton } from "@clerk/nextjs";
+import { ClerkProvider } from '@clerk/nextjs'
 import { Inter } from 'next/font/google'
 import './globals.css'
 
@@ -21,18 +20,11 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider>
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.className} min-h-screen bg-background antialiased`}>
-      <SignedOut>
-      <SignInButton />
-      <SignUpButton />
-      </SignedOut>
-      <SignedIn>
-      <UserButton />
-      </SignedIn>
-        {children}
-      </body>
-    </html>
+      <html lang="en" suppressHydrationWarning>
+        <body className={`${inter.className} min-h-screen bg-background antialiased`}>
+          {children}
+        </body>
+      </html>
     </ClerkProvider>
   )
 }

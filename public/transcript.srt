@@ -1,0 +1,31 @@
+1
+00:00:00,000 --> 00:00:00,240
+[Music]
+
+2
+00:00:00,240 --> 00:00:02,580
+Alright, so how cool would it be if you
+
+3
+00:00:02,580 --> 00:00:04,979
+can create a fully functional full stack
+
+4
+00:00:04,979 --> 00:00:05,519
+web app
+
+5
+00:00:05,519 --> 00:00:08,520
+using AI without writing a single line of
+
+6
+00:00:08,520 --> 00:00:08,960
+code.
+
+7
+00:00:08,960 --> 00:00:10,779
+So the AI will take care of everything
+
+8
+00:00:10,779 --> 00:00:11,880
+the backend, frontend,

@@ -163,8 +163,8 @@ export default function TranscriptionForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-      <div className="bg-white p-8 rounded-2xl shadow-lg max-w-md w-full">
+    <div className="w-full">
+      <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg p-8">
         <h1 className="text-2xl font-semibold mb-2 text-center">SamScribe</h1>
         <h2 className="text-lg text-center mb-6 text-gray-600">Powered by Groq</h2>
         
@@ -225,7 +225,7 @@ export default function TranscriptionForm() {
             </div>
             <div className="mt-6 p-4 bg-yellow-50 rounded-lg">
               <h3 className="font-semibold flex items-center"><Zap className="mr-2 text-yellow-500" size={16} />Lightning-Fast Transcription</h3>
-              <p className="text-sm mt-2">Using Groq's Whisper model for fast and accurate transcription.</p>
+              <p className="text-sm mt-2">Using Groq&apos;s Whisper model for fast and accurate transcription.</p>
             </div>
             
             {/* Display creator info at bottom */}
@@ -263,7 +263,9 @@ export default function TranscriptionForm() {
               value={preprocessingProgress} 
               className="w-full mb-2 h-2 bg-gray-200" 
             />
-            <p className="text-center text-sm text-gray-500">Let me cook.</p>
+            <p className="text-center text-sm text-gray-500">
+              Couldn&apos;t process file. Please try again.
+            </p>
             
             {preprocessingProgress === 100 && (
               <>
@@ -272,7 +274,9 @@ export default function TranscriptionForm() {
                   value={apiProgress} 
                   className="w-full mb-2 h-2 bg-gray-200" 
                 />
-                <p className="text-center text-sm text-gray-500">Processing using Groq's Whisper model</p>
+                <p className="text-center text-sm text-gray-500">
+                  Couldn&apos;t upload file. Please try again.
+                </p>
               </>
             )}
             
