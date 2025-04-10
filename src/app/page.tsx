@@ -13,6 +13,11 @@ import { AnimatedText } from "@/components/AnimatedText";
 import { motion } from "framer-motion";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import Features from '@/components/Features';
+import { ThreeStepProcess } from '@/components/ThreeStepProcess';
+import LanguagesSection from '@/components/LanguagesSection';
+import PricingSection from '@/components/PricingSection';
+import { TestimonialsSection } from "@/components/TestimonialsSection";
+import { SocialProofComparison } from "@/components/SocialProofComparison";
 
 export default function LandingPage() {
   const { isSignedIn, isLoaded } = useAuth();
@@ -68,7 +73,7 @@ export default function LandingPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#4f46e5]/5 via-white to-white">
+    <div className="min-h-screen overflow-x-hidden bg-gradient-to-b from-[#4f46e5]/5 via-white to-white">
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-md z-50 border-b border-gray-200">
         <div className="container mx-auto px-4">
@@ -112,13 +117,13 @@ export default function LandingPage() {
       </header>
 
       {/* Add padding to account for fixed header */}
-      <div className="pt-16">
+      <div className="pt-16 overflow-x-hidden">
         {/* Hero Section */}
-        <div className="relative">
+        <div className="relative overflow-x-hidden">
           {/* Background gradient effects */}
           <div className="absolute inset-0 bg-gradient-to-r from-[#4f46e5]/10 to-transparent" />
-          <div className="absolute top-20 -left-64 w-96 h-96 bg-[#4f46e5]/10 rounded-full blur-3xl" />
-          <div className="absolute top-40 -right-64 w-96 h-96 bg-[#4f46e5]/10 rounded-full blur-3xl" />
+          <div className="absolute top-20 -left-64 w-96 h-96 bg-[#4f46e5]/10 rounded-full blur-3xl opacity-50" />
+          <div className="absolute top-40 -right-64 w-96 h-96 bg-[#4f46e5]/10 rounded-full blur-3xl opacity-50" />
 
           <div className="container relative mx-auto px-4 pt-20 pb-16">
             <div className="text-center max-w-4xl mx-auto">
@@ -191,45 +196,20 @@ export default function LandingPage() {
         {/* Features Section */}
         <Features />
 
+        {/* Three Step Process */}
+        <ThreeStepProcess />
+
+        {/* Social Proof Comparison */}
+        <SocialProofComparison />
+
         {/* Pricing Section */}
-        <div className="py-16 bg-gray-50">
-          <div className="container mx-auto px-4">
-            <h2 className="text-3xl font-bold text-center mb-12">Simple, Transparent Pricing</h2>
-            <div className="max-w-3xl mx-auto">
-              <div className="bg-white p-8 rounded-lg shadow-lg border border-gray-200">
-                <h3 className="text-2xl font-bold text-center mb-4">Free Trial</h3>
-                <p className="text-center text-gray-600 mb-6">Try SamScribe with no commitment</p>
-                <ul className="space-y-4 mb-8">
-                  <li className="flex items-center">
-                    <svg className="w-5 h-5 text-[#4f46e5] mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                    <span>5 minutes of free transcription</span>
-                  </li>
-                  <li className="flex items-center">
-                    <svg className="w-5 h-5 text-[#4f46e5] mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                    <span>All export formats included</span>
-                  </li>
-                  <li className="flex items-center">
-                    <svg className="w-5 h-5 text-[#4f46e5] mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                    <span>No credit card required</span>
-                  </li>
-                </ul>
-                <div className="text-center">
-                  <SignUpButton mode="modal">
-                    <Button size="lg" className="bg-[#4f46e5] hover:bg-[#4338ca] w-full">
-                      Start Free Trial
-                    </Button>
-                  </SignUpButton>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <PricingSection />
+
+        {/* Languages Section */}
+        <LanguagesSection />
+
+        {/* Testimonials Section */}
+        <TestimonialsSection />
 
         {/* Footer */}
         <footer className="bg-[#1a1f36] text-white py-12">

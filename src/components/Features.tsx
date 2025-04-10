@@ -142,7 +142,7 @@ export default function Features() {
     : features.find(f => f.id === activeFeature)!;
 
   return (
-    <div className="py-24 bg-white" id="features">
+    <div className="w-full py-24 bg-white overflow-x-hidden" id="features">
       <div className="container mx-auto px-4">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
@@ -167,7 +167,7 @@ export default function Features() {
         </motion.div>
 
         {/* Features Navigation */}
-        <div className="flex justify-center items-center space-x-8 mb-12">
+        <div className="flex flex-wrap justify-center items-center gap-8 mb-12">
           {features.map((feature) => (
             <motion.button
               key={feature.id}
